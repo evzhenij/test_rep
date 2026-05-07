@@ -1,0 +1,106 @@
+# task1_pure_functions.py
+"""
+Модуль с чистыми функциями для работы со списками, паролями и числами Фибоначчи.
+Сложность каждой функции указана в комментариях перед реализацией.
+"""
+
+from typing import List, Any, Dict
+from functools import lru_cache
+
+
+def flatten_list(nested_list: List[Any]) -> List[Any]:
+    """
+    Превращает вложенный список произвольной глубины в плоский.
+    Временная сложность: O(N), где N — общее количество элементов (включая вложенные).
+    Каждый элемент обрабатывается ровно один раз.
+    """
+    result = []
+
+    def _flatten(item):
+        if isinstance(item, list):
+            for sub in item:
+                _flatten(sub)
+        else:
+            result.append(item)
+
+    _flatten(nested_list)
+    return result
+
+
+def merge_sorted_lists(list1: List[int], list2: List[int]) -> List[int]:
+    """
+    Сливает два отсортированных списка в один отсортированный.
+    Сложность: O(n + m), где n, m — длины списков.
+    Проходим по каждому элементу каждого списка ровно один раз.
+    """
+    merged = []
+    i = j = 0
+
+    while i < len(list1) and j < len(list2):
+        if list1[i] <= list2[j]:
+            merged.append(list1[i])
+            i += 1
+        else:
+            merged.append(list2[j])
+            j += 1
+
+    # Добавляем хвосты
+    if i < len(list1):
+        merged.extend(list1[i:])
+    if j < len(list2):
+        merged.extend(list2[j:])
+
+    return merged
+
+
+def validate_password(password: str) -> Dict[str, bool]:
+    """
+    Проверяет пароль на длину ≥8, наличие заглавной буквы, цифры и спецсимвола.
+    Сложность: O(n), где n — длина пароля. Каждый символ проверяется константное число раз.
+    """
+    return {
+        'length_valid': len(password) >= 8,
+        'has_uppercase': any(c.isupper() for c in password),
+        'has_digit': any(c.isdigit() for c in password),
+        'has_special': any(not c.isalnum() for c in password)
+    }
+
+
+@lru_cache(maxsize=None)
+def fibonacci_memo(n: int) -> int:
+    """
+    Вычисляет n-е число Фибоначчи с мемоизацией (кэшированием).
+    Сложность первого вызова: O(n), повторные вызовы для того же n: O(1).
+    """
+    if not isinstance(n, int) or n < 0:
+        raise ValueError("n должно быть неотрицательным целым числом")
+    if n <= 1:
+        return n
+    return fibonacci_memo(n - 1) + fibonacci_memo(n - 2)
+
+
+if __name__ == "__main__":
+    # Встроенные assert-тесты
+    print("Тестируем flatten_list...")
+    assert flatten_list([1, [2, [3, 4], 5], 6]) == [1, 2, 3, 4, 5, 6]
+    assert flatten_list([[], [1], [[2]]]) == [1, 2]
+    assert flatten_list([1, 2, 3]) == [1, 2, 3]
+    print("OK")
+
+    print("\nТестируем merge_sorted_lists...")
+    assert merge_sorted_lists([1, 3, 5], [2, 4, 6]) == [1, 2, 3, 4, 5, 6]
+    assert merge_sorted_lists([], [1, 2]) == [1, 2]
+    assert merge_sorted_lists([1, 1, 2], [1, 2, 3]) == [1, 1, 1, 2, 2, 3]
+    print("OK")
+
+    print("\nТестируем validate_password...")
+    pwd = validate_password("Pass123!")
+    assert all([pwd['length_valid'], pwd['has_uppercase'], pwd['has_digit'], pwd['has_special']])
+    assert validate_password("short")['length_valid'] is False
+    assert validate_password("nouppercase1!")['has_uppercase'] is False
+    print("OK")
+
+    print("\nТестируем fibonacci_memo...")
+    assert [fibonacci_memo(i) for i in range(10)] == [0, 1, 1, 2, 3, 5, 8, 13, 21, 34]
+    print("OK")
+    print(f"Информация о кэше: {fibonacci_memo.cache_info()}")
